@@ -5,30 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iChat Pro</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background-color: #0b141a; color: #e9edef; display: flex; justify-content: center; height: 100vh; }
-        .app-container { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; background: #111b21; border-left: 1px solid #222d34; border-right: 1px solid #222d34; position: relative; }
+        .app-container { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; background: #111b21; position: relative; }
         header { background: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222d34; }
         header h1 { font-size: 1.2rem; color: #00a884; font-weight: bold; }
         .user-info-bar { background: #111b21; padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #222d34; }
-        input[type="text"] { background: #2a3942; border: none; color: #e9edef; padding: 8px 12px; border-radius: 8px; outline: none; font-size: 0.9rem; }
-        .input-id { flex: 1; }
-        button { background: #00a884; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.96); }
-        .call-btn { background: #008069; display: flex; align-items: center; gap: 4px; }
+        input[type="text"] { background: #2a3942; border: none; color: #e9edef; padding: 8px 12px; border-radius: 8px; outline: none; font-size: 0.9rem; flex: 1; }
+        button { background: #00a884; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .chat-box { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: radial-gradient(#202c33 1px, transparent 0); background-size: 16px 16px; }
-        .message { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 0.95rem; position: relative; word-wrap: break-word; display: flex; flex-direction: column; }
+        .message { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 0.95rem; word-break: break-word; }
         .message.sent { align-self: flex-end; background: #005c4b; color: #e9edef; border-bottom-right-radius: 2px; }
         .message.received { align-self: flex-start; background: #202c33; color: #e9edef; border-bottom-left-radius: 2px; }
-        .meta { font-size: 0.65rem; color: #8696a0; align-self: flex-end; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+        .meta { font-size: 0.65rem; color: #8696a0; text-align: right; margin-top: 4px; }
         .footer-input { background: #202c33; padding: 8px 12px; display: flex; gap: 8px; align-items: center; }
-        .footer-input input { flex: 1; background: #2a3942; border-radius: 20px; padding: 10px 16px; }
+        .footer-input input { border-radius: 20px; padding: 10px 16px; }
         .send-btn { border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; }
         .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
         .video-container.active { display: flex; }
         #remoteVideo { width: 90%; height: 60%; background: #000; border-radius: 12px; object-fit: cover; }
         #localVideo { width: 100px; height: 140px; background: #222; border-radius: 8px; position: absolute; top: 20px; right: 20px; object-fit: cover; border: 2px solid #00a884; }
-        .call-controls { margin-top: 15px; display: flex; gap: 15px; }
+        .call-controls { margin-top: 15px; }
         .end-call { background: #ea0038; }
     </style>
 </head>
@@ -37,23 +34,23 @@
 <div class="app-container">
     <header>
         <h1>iChat ⚡</h1>
-        <span id="display-id" style="font-size:0.8rem; color:#8696a0;">ID: Not Set</span>
+        <span id="display-id" style="font-size:0.8rem; color:#00a884;">ID: Not Set</span>
     </header>
 
     <div class="user-info-bar">
-        <input type="text" id="myId" class="input-id" placeholder="Apna Name / ID rakhein...">
+        <input type="text" id="myId" placeholder="Apna Name / ID set karein...">
         <button onclick="setMyId()">Set ID</button>
     </div>
 
     <div class="user-info-bar">
-        <input type="text" id="friendId" class="input-id" placeholder="Dost ki ID likhein...">
-        <button class="call-btn" onclick="startCall()">📞 Call</button>
+        <input type="text" id="friendId" placeholder="Dost ki ID daalein...">
+        <button onclick="startCall()" style="background:#008069;">📞 Call</button>
     </div>
 
     <div class="chat-box" id="chatBox"></div>
 
     <div class="footer-input">
-        <input type="text" id="msgInput" placeholder="Message likhein..." onkeypress="if(event.key === 'Enter') sendMsg()">
+        <input type="text" id="msgInput" placeholder="Message write karein..." onkeypress="if(event.key === 'Enter') sendMsg()">
         <button class="send-btn" onclick="sendMsg()">➤</button>
     </div>
 
@@ -67,15 +64,22 @@
 </div>
 
 <script>
-    let myId = '';
-    let friendId = '';
+    let myId = localStorage.getItem('ichat_saved_id') || '';
+
+    window.onload = function() {
+        if(myId) {
+            document.getElementById('myId').value = myId;
+            document.getElementById('display-id').innerText = 'ID: ' + myId;
+        }
+    };
 
     function setMyId() {
         const val = document.getElementById('myId').value.trim();
         if(val) {
             myId = val;
+            localStorage.setItem('ichat_saved_id', myId);
             document.getElementById('display-id').innerText = 'ID: ' + myId;
-            alert('Aapki ID set ho gayi: ' + myId);
+            alert('Aapki ID permanent save ho gayi: ' + myId);
         }
     }
 
@@ -106,8 +110,8 @@
     }
 
     function startCall() {
-        friendId = document.getElementById('friendId').value.trim();
-        if(!friendId) { alert('Dost ki ID daalein!'); return; }
+        const fId = document.getElementById('friendId').value.trim();
+        if(!fId) { alert('Dost ki ID daalein!'); return; }
         document.getElementById('videoContainer').classList.add('active');
     }
 
