@@ -34,13 +34,20 @@
         .app-container { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; background: var(--panel-bg); position: relative; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
         
         /* Header */
-        header { background: var(--header-bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        header { background: var(--header-bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; position: relative; }
         header h1 { font-size: 1.1rem; color: #00a884; font-weight: bold; display: flex; align-items: center; gap: 6px; }
         [data-theme="light"] header h1 { color: #ffffff; }
         
-        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
         .my-id-badge { font-size: 0.75rem; background: var(--input-bg); color: #00a884; padding: 4px 8px; border-radius: 12px; border: 1px solid #00a884; font-weight: 600; }
-        .icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 50%; }
+        .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px; border-radius: 50%; color: var(--text-color); }
+
+        /* Dropdown Settings Menu */
+        .dropdown-menu { position: absolute; top: 45px; right: 10px; background: var(--header-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 1000; width: 160px; overflow: hidden; }
+        .dropdown-menu.active { display: flex; }
+        .menu-item { padding: 10px 14px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); color: var(--text-color); }
+        .menu-item:hover { background: var(--input-bg); }
+        .menu-item.danger { color: #ea0038; }
 
         /* Profile Bar */
         .profile-bar { background: var(--panel-bg); padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
@@ -52,7 +59,6 @@
         input[type="text"] { background: var(--input-bg); border: none; color: var(--text-color); padding: 8px 10px; border-radius: 8px; outline: none; font-size: 0.85rem; flex: 1; }
         button.action-btn { background: #00a884; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
         button.call-btn { background: #008069; }
-        button.logout-btn { background: #ea0038; }
 
         /* Chat Box */
         .chat-box { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(var(--border-color) 1px, transparent 0); background-size: 16px 16px; }
@@ -82,12 +88,18 @@
 </head>
 <body data-theme="dark">
 
-<div class="app-container">
+<div class="app-container" onclick="closeMenu(event)">
     <header>
         <h1>iChat ⚡</h1>
         <div class="header-right">
             <span id="display-id" class="my-id-badge">ID: Not Set</span>
-            <button class="icon-btn" onclick="toggleTheme()" title="Theme Badlein">🌓</button>
+            <button class="icon-btn" onclick="toggleMenu(event)" title="Settings">⋮</button>
+            
+            <!-- 3-Dot Menu Options -->
+            <div class="dropdown-menu" id="settingsMenu">
+                <div class="menu-item" onclick="toggleTheme()">🌓 Theme Badlein</div>
+                <div class="menu-item danger" onclick="logoutId()">🚪 Logout</div>
+            </div>
         </div>
     </header>
 
@@ -103,7 +115,6 @@
     <div class="user-info-bar">
         <input type="text" id="myId" placeholder="Apna Name / ID set karein...">
         <button class="action-btn" onclick="setMyId()">Set ID</button>
-        <button class="action-btn logout-btn" onclick="logoutId()">Logout</button>
     </div>
 
     <div class="user-info-bar">
@@ -152,6 +163,19 @@
             showAvatar(savedAvatar);
         }
     };
+
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('settingsMenu');
+        menu.classList.toggle('active');
+    }
+
+    function closeMenu(event) {
+        const menu = document.getElementById('settingsMenu');
+        if (menu.classList.contains('active')) {
+            menu.classList.remove('active');
+        }
+    }
 
     function toggleTheme() {
         let currentTheme = document.body.getAttribute('data-theme');
