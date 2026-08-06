@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>iChat Pro Ultra</title>
+    <!-- PeerJS for Real-Time P2P Chat and Video Call -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -39,7 +41,10 @@
         [data-theme="light"] header h1 { color: #ffffff; }
         
         .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
-        .my-id-badge { font-size: 0.75rem; background: var(--input-bg); color: #00a884; padding: 4px 8px; border-radius: 12px; border: 1px solid #00a884; font-weight: 600; }
+        .my-id-badge { font-size: 0.75rem; background: var(--input-bg); color: #00a884; padding: 4px 8px; border-radius: 12px; border: 1px solid #00a884; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ea0038; display: inline-block; }
+        .status-dot.online { background: #00a884; }
+        
         .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px; border-radius: 50%; color: var(--text-color); }
 
         /* Dropdown Settings Menu */
@@ -49,32 +54,12 @@
         .menu-item:hover { background: var(--input-bg); }
         .menu-item.danger { color: #ea0038; }
 
-        /* Top Bar with DP and iChat Label */
+        /* Top Bar with DP */
         .top-info-bar { background: var(--panel-bg); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         .profile-section { display: flex; align-items: center; gap: 10px; }
         
-        .avatar-container { 
-            position: relative; 
-            width: 42px; 
-            height: 42px; 
-            border-radius: 50%; 
-            background: var(--input-bg); 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            cursor: pointer; 
-            border: 2px solid #00a884; 
-            flex-shrink: 0; 
-        }
-        .avatar-container img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+        .avatar-container { position: relative; width: 42px; height: 42px; border-radius: 50%; background: var(--input-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #00a884; flex-shrink: 0; }
+        .avatar-container img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
         .avatar-container span { font-size: 1.3rem; z-index: 1; }
         .app-title-tag { font-size: 0.95rem; font-weight: bold; color: #00a884; }
 
@@ -116,7 +101,7 @@
     <header>
         <h1>iChat ⚡</h1>
         <div class="header-right">
-            <span id="display-id" class="my-id-badge">ID: Not Set</span>
+            <span id="display-id" class="my-id-badge"><span id="statusDot" class="status-dot"></span> <span id="idText">Not Set</span></span>
             <button class="icon-btn" onclick="toggleMenu(event)" title="Settings">⋮</button>
             
             <div class="dropdown-menu" id="settingsMenu">
@@ -143,7 +128,7 @@
     </div>
 
     <div class="user-info-bar">
-        <input type="text" id="friendId" placeholder="Dost ki ID search karein...">
+        <input type="text" id="friendId" placeholder="Dost ki ID daalein...">
         <button class="action-btn call-btn" onclick="startCall()">📞 Call</button>
     </div>
 
@@ -175,6 +160,10 @@
     let myId = localStorage.getItem('ichat_saved_id') || '';
     let savedAvatar = localStorage.getItem('ichat_saved_avatar') || '';
     let savedTheme = localStorage.getItem('ichat_saved_theme') || 'dark';
+    let peer = null;
+    let conn = null;
+    let currentCall = null;
+    let localStream = null;
     let isMicMuted = false;
     let isCamOff = false;
 
@@ -182,24 +171,76 @@
         document.body.setAttribute('data-theme', savedTheme);
         if(myId) {
             document.getElementById('myId').value = myId;
-            document.getElementById('display-id').innerText = 'ID: ' + myId;
+            initPeer(myId);
         }
         if(savedAvatar) {
             showAvatar(savedAvatar);
         }
     };
 
+    function initPeer(id) {
+        if(peer) { peer.destroy(); }
+        peer = new Peer(id);
+        
+        peer.on('open', (id) => {
+            document.getElementById('idText').innerText = id;
+            document.getElementById('statusDot').classList.add('online');
+        });
+
+        peer.on('connection', (connection) => {
+            conn = connection;
+            setupConnection();
+        });
+
+        peer.on('call', (call) => {
+            if(confirm("Incoming Video Call! Uthayein?")) {
+                navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                    localStream = stream;
+                    document.getElementById('localVideo').srcObject = stream;
+                    document.getElementById('videoContainer').classList.add('active');
+                    call.answer(stream);
+                    call.on('stream', remoteStream => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+                    currentCall = call;
+                }).catch(err => alert("Camera/Mic permission nahi mili!"));
+            } else {
+                call.close();
+            }
+        });
+
+        peer.on('error', (err) => {
+            console.log(err);
+            alert("Peer Error: ID pehle se li gayi hogi ya network issue hai.");
+            document.getElementById('statusDot').classList.remove('online');
+        });
+    }
+
+    function setupConnection() {
+        conn.on('data', (data) => {
+            if(data.type === 'text') {
+                appendMsg(data.content, 'received', 'text');
+            } else if(data.type === 'image') {
+                appendMsg(data.content, 'received', 'image');
+            }
+        });
+    }
+
+    function connectToFriend() {
+        const fId = document.getElementById('friendId').value.trim();
+        if(!fId) return;
+        conn = peer.connect(fId);
+        setupConnection();
+    }
+
     function toggleMenu(event) {
         event.stopPropagation();
-        const menu = document.getElementById('settingsMenu');
-        menu.classList.toggle('active');
+        document.getElementById('settingsMenu').classList.toggle('active');
     }
 
     function closeMenu(event) {
         const menu = document.getElementById('settingsMenu');
-        if (menu.classList.contains('active')) {
-            menu.classList.remove('active');
-        }
+        if (menu.classList.contains('active')) menu.classList.remove('active');
     }
 
     function toggleTheme() {
@@ -234,27 +275,33 @@
         if(val) {
             myId = val;
             localStorage.setItem('ichat_saved_id', myId);
-            document.getElementById('display-id').innerText = 'ID: ' + myId;
-            alert('Aapki ID permanent save ho gayi: ' + myId);
+            initPeer(myId);
+            alert('Aapki ID set ho gayi: ' + myId);
         }
     }
 
     function logoutId() {
         localStorage.removeItem('ichat_saved_id');
         localStorage.removeItem('ichat_saved_avatar');
-        myId = '';
-        savedAvatar = '';
-        document.getElementById('myId').value = '';
-        document.getElementById('display-id').innerText = 'ID: Not Set';
-        document.getElementById('avatarImg').style.display = 'none';
-        document.getElementById('avatarIcon').style.display = 'block';
-        alert('Aap successfully logout ho gaye hain!');
+        if(peer) peer.destroy();
+        location.reload();
     }
 
     function sendMsg() {
         const input = document.getElementById('msgInput');
         const text = input.value.trim();
         if(!text) return;
+        
+        if(!conn || !conn.open) {
+            connectToFriend();
+        }
+        
+        setTimeout(() => {
+            if(conn && conn.open) {
+                conn.send({type: 'text', content: text});
+            }
+        }, 500);
+
         appendMsg(text, 'sent', 'text');
         input.value = '';
     }
@@ -264,7 +311,12 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            appendMsg(e.target.result, 'sent', 'image');
+            const imgSrc = e.target.result;
+            if(!conn || !conn.open) connectToFriend();
+            setTimeout(() => {
+                if(conn && conn.open) conn.send({type: 'image', content: imgSrc});
+            }, 500);
+            appendMsg(imgSrc, 'sent', 'image');
         };
         reader.readAsDataURL(file);
         event.target.value = '';
@@ -293,33 +345,47 @@
 
     function startCall() {
         const fId = document.getElementById('friendId').value.trim();
-        if(!fId) { alert('Dost ki ID search karein!'); return; }
-        document.getElementById('videoContainer').classList.add('active');
+        if(!fId) { alert('Dost ki ID daalein!'); return; }
         
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => { document.getElementById('localVideo').srcObject = stream; })
-            .catch(err => console.log(err));
-        }
+        navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+            localStream = stream;
+            document.getElementById('localVideo').srcObject = stream;
+            document.getElementById('videoContainer').classList.add('active');
+            
+            const call = peer.call(fId, stream);
+            call.on('stream', remoteStream => {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+            });
+            currentCall = call;
+        }).catch(err => alert("Camera/Mic access nahi mila!"));
     }
 
     function endCall() {
-        const localVid = document.getElementById('localVideo');
-        if (localVid.srcObject) {
-            localVid.srcObject.getTracks().forEach(track => track.stop());
-            localVid.srcObject = null;
+        if(localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        if(currentCall) {
+            currentCall.close();
         }
         document.getElementById('videoContainer').classList.remove('active');
     }
 
     function toggleMic() {
-        isMicMuted = !isMicMuted;
-        document.getElementById('micBtn').innerText = isMicMuted ? '🔇' : '🎙️';
+        if(localStream) {
+            const audioTrack = localStream.getAudioTracks()[0];
+            audioTrack.enabled = !audioTrack.enabled;
+            isMicMuted = !audioTrack.enabled;
+            document.getElementById('micBtn').innerText = isMicMuted ? '🔇' : '🎙️';
+        }
     }
 
     function toggleCam() {
-        isCamOff = !isCamOff;
-        document.getElementById('camBtn').innerText = isCamOff ? '🚫' : '📹';
+        if(localStream) {
+            const videoTrack = localStream.getVideoTracks()[0];
+            videoTrack.enabled = !videoTrack.enabled;
+            isCamOff = !videoTrack.enabled;
+            document.getElementById('camBtn').innerText = isCamOff ? '🚫' : '📹';
+        }
     }
 </script>
 </body>
