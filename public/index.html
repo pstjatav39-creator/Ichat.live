@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iChat⚡</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h2 style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">iChat⚡</h2>
+            <div class="my-id-box" id="myIdDisplay">Not Set</div>
+        </div>
+
+        <!-- Apna Name / Mobile Set karne ke liye -->
+        <div class="call-controls">
+            <input type="text" id="customIdInput" placeholder="Apna Name ya Mobile No...">
+            <button id="setIdBtn" style="background:#0095f6;">Set ID</button>
+        </div>
+
+        <div class="video-container hidden" id="videoContainer">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+
+        <!-- Friend ko Call karne ke liye -->
+        <div class="call-controls">
+            <input type="text" id="peerIdInput" placeholder="Friend Name ya Mobile No...">
+            <button id="callBtn">📞 Call</button>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Message write karein...">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
