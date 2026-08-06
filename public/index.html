@@ -49,12 +49,33 @@
         .menu-item:hover { background: var(--input-bg); }
         .menu-item.danger { color: #ea0038; }
 
-        /* Top Bar with DP and iChat Text */
+        /* Top Bar with DP and iChat Label */
         .top-info-bar { background: var(--panel-bg); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         .profile-section { display: flex; align-items: center; gap: 10px; }
-        .avatar-container { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--input-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #00a884; flex-shrink: 0; }
-        .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-container span { font-size: 1.3rem; }
+        
+        .avatar-container { 
+            position: relative; 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            background: var(--input-bg); 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            border: 2px solid #00a884; 
+            flex-shrink: 0; 
+        }
+        .avatar-container img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .avatar-container span { font-size: 1.3rem; z-index: 1; }
         .app-title-tag { font-size: 0.95rem; font-weight: bold; color: #00a884; }
 
         /* User & Search Bars */
@@ -105,12 +126,11 @@
         </div>
     </header>
 
-    <!-- Top Bar with DP and iChat Label -->
     <div class="top-info-bar">
         <div class="profile-section">
             <label class="avatar-container" title="DP Badlein">
                 <span id="avatarIcon">👤</span>
-                <img id="avatarImg" style="display:none;" alt="Profile">
+                <img id="avatarImg" src="" style="display:none;" alt="Profile">
                 <input type="file" id="dpInput" accept="image/*" style="display:none;" onchange="setAvatar(event)">
             </label>
             <span class="app-title-tag">iChat Profile</span>
@@ -202,10 +222,11 @@
     }
 
     function showAvatar(src) {
-        document.getElementById('avatarIcon').style.display = 'none';
-        let img = document.getElementById('avatarImg');
+        const img = document.getElementById('avatarImg');
+        const icon = document.getElementById('avatarIcon');
         img.src = src;
         img.style.display = 'block';
+        icon.style.display = 'none';
     }
 
     function setMyId() {
