@@ -3,14 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iChat Pro Ultra</title>
+    <title>iChat Secure Pro</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { --bg-color: #0b141a; --panel-bg: #111b21; --header-bg: #202c33; --text-color: #e9edef; --text-secondary: #8696a0; --input-bg: #2a3942; --sent-bg: #005c4b; --received-bg: #202c33; --border-color: #222d34; }
         [data-theme="light"] { --bg-color: #efeae2; --panel-bg: #ffffff; --header-bg: #00a884; --text-color: #111b21; --text-secondary: #667781; --input-bg: #f0f2f5; --sent-bg: #d9fdd3; --received-bg: #ffffff; --border-color: #e2e8f0; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         html, body { height: 100dvh; width: 100%; overflow: hidden; background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; }
+        
         .app-container { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; background: var(--panel-bg); position: relative; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
+        
+        /* Auth Screen */
+        .auth-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; z-index: 200; gap: 15px; }
+        .auth-screen.hidden { display: none; }
+        .auth-box { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+        .auth-box h2 { color: #00a884; text-align: center; margin-bottom: 10px; font-size: 1.6rem; }
+        .auth-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; outline: none; font-size: 0.95rem; }
+        .auth-btn { width: 100%; background: #00a884; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .auth-switch { text-align: center; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; margin-top: 5px; }
+        .auth-switch span { color: #00a884; font-weight: bold; }
+
         header { background: var(--header-bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         header h1 { font-size: 1.1rem; color: #00a884; font-weight: bold; }
         .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
@@ -18,18 +30,22 @@
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ea0038; display: inline-block; }
         .status-dot.online { background: #00a884; }
         .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); }
+        
         .dropdown-menu { position: absolute; top: 45px; right: 10px; background: var(--header-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 1000; width: 170px; }
         .dropdown-menu.active { display: flex; }
         .menu-item { padding: 10px 14px; font-size: 0.85rem; cursor: pointer; border-bottom: 1px solid var(--border-color); color: var(--text-color); }
         .menu-item.danger { color: #ea0038; }
+
         .top-info-bar { background: var(--panel-bg); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
         .profile-section { display: flex; align-items: center; gap: 10px; }
         .avatar-container { position: relative; width: 42px; height: 42px; border-radius: 50%; background: var(--input-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #00a884; }
         .avatar-container img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        
         .user-info-bar { background: var(--panel-bg); padding: 6px 12px; display: flex; gap: 6px; align-items: center; border-bottom: 1px solid var(--border-color); }
-        input[type="text"] { background: var(--input-bg); border: none; color: var(--text-color); padding: 8px 10px; border-radius: 8px; outline: none; font-size: 0.85rem; flex: 1; }
+        input[type="text"], input[type="password"] { background: var(--input-bg); border: none; color: var(--text-color); padding: 8px 10px; border-radius: 8px; outline: none; font-size: 0.85rem; flex: 1; }
         button.action-btn { background: #00a884; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
         button.call-btn { background: #008069; }
+        
         .chat-box { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .message { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; word-break: break-word; display: flex; flex-direction: column; }
         .message.sent { align-self: flex-end; background: var(--sent-bg); color: var(--text-color); }
@@ -37,10 +53,12 @@
         .message img.chat-img { width: 100%; max-width: 220px; border-radius: 8px; }
         .message audio { width: 200px; height: 35px; }
         .meta { font-size: 0.6rem; color: var(--text-secondary); align-self: flex-end; margin-top: 3px; }
+        
         .footer-input { background: var(--header-bg); padding: 8px 10px; display: flex; gap: 6px; align-items: center; border-top: 1px solid var(--border-color); }
         .tool-btn { background: var(--input-bg); border: none; color: var(--text-secondary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; }
         .tool-btn.recording { background: #ea0038; color: white; }
         .send-btn { border-radius: 50%; width: 36px; height: 36px; background: #00a884; border: none; color: white; cursor: pointer; }
+        
         .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; justify-content: space-between; align-items: center; z-index: 100; padding: 20px 0; }
         .video-container.active { display: flex; }
         #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
@@ -51,6 +69,18 @@
     </style>
 </head>
 <body data-theme="dark">
+
+<!-- Login / Register Screen -->
+<div class="auth-screen" id="authScreen">
+    <div class="auth-box">
+        <h2 id="authTitle">iChat Secure Login</h2>
+        <input type="text" id="authId" class="auth-input" placeholder="Username / ID daalein...">
+        <input type="password" id="authPass" class="auth-input" placeholder="Password daalein...">
+        <button class="auth-btn" id="authBtn" onclick="handleAuth()">Login Karein</button>
+        <div class="auth-switch" id="authSwitchText" onclick="toggleAuthMode()">Account nahi hai? <span>Register Karein</span></div>
+    </div>
+</div>
+
 <div class="app-container" onclick="closeMenu(event)">
     <header>
         <h1>iChat ⚡</h1>
@@ -71,15 +101,11 @@
                 <img id="avatarImg" src="" style="display:none;" alt="DP">
                 <input type="file" id="dpInput" accept="image/*" style="display:none;" onchange="setAvatar(event)">
             </label>
-            <span style="font-size:0.95rem; font-weight:bold; color:#00a884;">iChat Profile</span>
+            <span style="font-size:0.95rem; font-weight:bold; color:#00a884;">Secure Profile</span>
         </div>
     </div>
     <div class="user-info-bar">
-        <input type="text" id="myId" placeholder="Apna Name / ID set karein...">
-        <button class="action-btn" onclick="setMyId()">Set ID</button>
-    </div>
-    <div class="user-info-bar">
-        <input type="text" id="friendId" placeholder="Dost ki ID daalein...">
+        <input type="text" id="friendId" placeholder="Dost ki ID search karein...">
         <button class="action-btn call-btn" onclick="startCall()">📞 Call</button>
     </div>
     <div class="chat-box" id="chatBox"></div>
@@ -101,9 +127,52 @@
         </div>
     </div>
 </div>
+
 <script>
-    let myId = localStorage.getItem('ichat_saved_id') || '', savedAvatar = localStorage.getItem('ichat_saved_avatar') || '', savedTheme = localStorage.getItem('ichat_saved_theme') || 'dark';
+    let myId = localStorage.getItem('ichat_logged_user') || '';
+    let savedAvatar = localStorage.getItem('ichat_saved_avatar') || '';
+    let savedTheme = localStorage.getItem('ichat_saved_theme') || 'dark';
+    let isRegisterMode = false;
     let peer = null, conn = null, currentCall = null, localStream = null, mediaRecorder = null, audioChunks = [], isRecording = false;
+
+    window.onload = function() {
+        document.body.setAttribute('data-theme', savedTheme);
+        if(myId) {
+            document.getElementById('authScreen').classList.add('hidden');
+            initPeer(myId);
+        }
+        if(savedAvatar) showAvatar(savedAvatar);
+    };
+
+    function toggleAuthMode() {
+        isRegisterMode = !isRegisterMode;
+        document.getElementById('authTitle').innerText = isRegisterMode ? 'iChat New Account' : 'iChat Secure Login';
+        document.getElementById('authBtn').innerText = isRegisterMode ? 'Register Karein' : 'Login Karein';
+        document.getElementById('authSwitchText').innerHTML = isRegisterMode ? 'Pehle se account hai? <span>Login Karein</span>' : 'Account nahi hai? <span>Register Karein</span>';
+    }
+
+    function handleAuth() {
+        const u = document.getElementById('authId').value.trim();
+        const p = document.getElementById('authPass').value.trim();
+        if(!u || !p) { alert('Username aur Password dono bharein!'); return; }
+
+        let users = JSON.parse(localStorage.getItem('ichat_users_db') || '{}');
+
+        if(isRegisterMode) {
+            if(users[u]) { alert('Ye Username pehle se maujood hai!'); return; }
+            users[u] = p;
+            localStorage.setItem('ichat_users_db', JSON.stringify(users));
+            alert('Registration safal rahi! Ab login karein.');
+            toggleAuthMode();
+        } else {
+            if(!users[u] || users[u] !== p) { alert('Galat Username ya Password!'); return; }
+            myId = u;
+            localStorage.setItem('ichat_logged_user', myId);
+            document.getElementById('authScreen').classList.add('hidden');
+            initPeer(myId);
+        }
+    }
+
     function playNotificationSound() {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -111,11 +180,7 @@
         gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
         osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.4);
     }
-    window.onload = function() {
-        document.body.setAttribute('data-theme', savedTheme);
-        if(myId) { document.getElementById('myId').value = myId; initPeer(myId); }
-        if(savedAvatar) showAvatar(savedAvatar);
-    };
+
     function initPeer(id) {
         if(peer) peer.destroy();
         peer = new Peer(id);
@@ -132,16 +197,19 @@
             } else call.close();
         });
     }
+
     function setupConnection() {
         conn.on('data', (data) => {
             playNotificationSound();
             appendMsg(data.content, 'received', data.type);
         });
     }
+
     function connectToFriend() {
         const fId = document.getElementById('friendId').value.trim();
         if(!fId) return; conn = peer.connect(fId); setupConnection();
     }
+
     function toggleMenu(e) { e.stopPropagation(); document.getElementById('settingsMenu').classList.toggle('active'); }
     function closeMenu() { document.getElementById('settingsMenu').classList.remove('active'); }
     function toggleTheme() {
@@ -155,11 +223,8 @@
         r.readAsDataURL(file);
     }
     function showAvatar(src) { document.getElementById('avatarImg').src = src; document.getElementById('avatarImg').style.display = 'block'; document.getElementById('avatarIcon').style.display = 'none'; }
-    function setMyId() {
-        const val = document.getElementById('myId').value.trim();
-        if(val) { myId = val; localStorage.setItem('ichat_saved_id', myId); initPeer(myId); alert('ID set: ' + myId); }
-    }
-    function logoutId() { localStorage.clear(); if(peer) peer.destroy(); location.reload(); }
+    function logoutId() { localStorage.removeItem('ichat_logged_user'); if(peer) peer.destroy(); location.reload(); }
+    
     function sendMsg() {
         const input = document.getElementById('msgInput'), text = input.value.trim(); if(!text) return;
         if(!conn || !conn.open) connectToFriend();
